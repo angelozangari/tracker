@@ -1,3 +1,4 @@
+from pyvis.network import Network
 import json
 
 class Node():
@@ -34,7 +35,7 @@ class Graph():
         self.id = 1
         self.head = Node(0, 'root')
     
-    def add_task(self, name: str, parent: Node):
+    def add_task(self, name: str, parent: Node) -> Node:
         node = Node(self.id, name)
         self.id += 1
         parent.add_dependency(node)
@@ -74,3 +75,31 @@ def load_graph(filepath: str) -> Graph:
     g.head = id_to_node[0]
     g.id = max(id_to_node) + 1
     return g
+
+def visualize_graph_interactive(graph: Graph, output_file='graph.html'):
+    net = Network(height='750px', width='100%', directed=True)
+    stack = [graph.head]
+    visited = set()
+
+    while stack:
+        node = stack.pop()
+        if node.id in visited:
+            continue
+        visited.add(node.id)
+
+        color = 'green' if node.done else 'red'
+        label = f'{node.name} (id={node.id})'
+        net.add_node(node.id, label=label, color=color)
+
+        for dep in node.dependencies:
+            if dep.id not in visited:
+                color = 'green' if dep.done else 'red'
+                label = f'{dep.name} (id={dep.id})'
+                net.add_node(dep.id, label=label, color=color)
+                stack.append(dep)    
+
+            net.add_edge(node.id, dep.id)
+            
+
+    net.show_buttons(filter_=['nodes']) # edit node labels
+    net.show(output_file, notebook=False)
